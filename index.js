@@ -7,7 +7,9 @@ mongoose.set('useUnifiedTopology', true);
 mongoose.set('useNewUrlParser', true);
 
 console.log('NODE_ENV', process.env.NODE_ENV);
-console.log('mngoURI', keys.mongoURI);
+console.log('mongoURI', keys.mongoURI);
+console.log(keys);
+console.log(process.env.MONGO_URI);
 mongoose.connect(keys.mongoURI);
 
 const app = express();
