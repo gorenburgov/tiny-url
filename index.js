@@ -6,6 +6,8 @@ require('./models/UrlMapping');
 mongoose.set('useUnifiedTopology', true);
 mongoose.set('useNewUrlParser', true);
 
+console.log('NODE_ENV', process.env.NODE_ENV);
+console.log('mngoURI', keys.mongoURI);
 mongoose.connect(keys.mongoURI);
 
 const app = express();
