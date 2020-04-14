@@ -19,22 +19,28 @@ module.exports = (app) => {
         });
     });
 
-    app.post('/tiny', requireValidSourceUrl, async (req, res) => {
+    app.post('/tiny', requireValidSourceUrl, (req, res) => {
         const sourceUrl = req.body.sourceUrl;
         let hash, mapping;
         // these loop is for checking hash collisions
 
         hash = tinyHash(req.body.sourceUrl + Math.random());
-        mapping = await UrlMapping.findOne({ hash });
-
-        if (!mapping) {
-            console.log('2222');
-            mapping = new UrlMapping({ hash, sourceUrl });
-            mapping.save();
-        }
-        console.log(33333);
-        const host = req.protocol + '://' + req.get('host');
-        res.send({ tinyUrl: `${host}/tiny/${mapping.hash}` });
+        UrlMapping.findOne({ hash })
+            .then((mapping) => {
+                console.log(mapping);
+                if (!mapping) {
+                    console.log('2222');
+                    mapping = new UrlMapping({ hash, sourceUrl });
+                    mapping.save();
+                }
+                console.log(33333);
+                const host = req.protocol + '://' + req.get('host');
+                res.send({ tinyUrl: `${host}/tiny/${mapping.hash}` });
+            })
+            .catch((e) => {
+                console.log('err', e);
+                res.status(500).send({ error: 'Database accsess failed' });
+            });
     });
 
     app.post('/source', async (req, res) => {
