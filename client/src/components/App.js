@@ -3,10 +3,6 @@ import { BrowserRouter, Route } from 'react-router-dom';
 import Header from './Header';
 import Dashboard from './Dashboard';
 
-const MappingList = () => {
-    return <div>MappingLis</div>;
-};
-
 class App extends Component {
     render() {
         return (
@@ -14,7 +10,6 @@ class App extends Component {
                 <div className="container">
                     <Header />
                     <Route path="/" exact component={Dashboard} />
-                    <Route path="/list" exact component={MappingList} />
                 </div>
             </BrowserRouter>
         );
