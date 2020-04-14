@@ -22,19 +22,11 @@ module.exports = (app) => {
     app.post('/tiny', requireValidSourceUrl, async (req, res) => {
         const sourceUrl = req.body.sourceUrl;
         let hash, mapping;
-        console.log(1111);
         // these loop is for checking hash collisions
-        do {
-            hash = tinyHash(req.body.sourceUrl + Math.random());
-            console.log('hash', hash);
-            try {
-                mapping = await UrlMapping.findOne({ hash });
-            } catch (e) {
-                mapping = null;
-            }
-        } while (!!mapping && mapping.sourceUrl !== sourceUrl);
-        console.log('hash', hash);
-        console.log(mapping);
+
+        hash = tinyHash(req.body.sourceUrl + Math.random());
+        mapping = await UrlMapping.findOne({ hash });
+
         if (!mapping) {
             console.log('2222');
             mapping = new UrlMapping({ hash, sourceUrl });
