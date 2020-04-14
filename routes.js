@@ -25,9 +25,10 @@ module.exports = (app) => {
         // these loop is for checking hash collisions
 
         hash = tinyHash(req.body.sourceUrl + Math.random());
+        console.log(1111);
         UrlMapping.findOne({ hash })
             .then((mapping) => {
-                console.log(mapping);
+                console.log('mapping', mapping);
                 if (!mapping) {
                     console.log('2222');
                     mapping = new UrlMapping({ hash, sourceUrl });
@@ -41,6 +42,7 @@ module.exports = (app) => {
                 console.log('err', e);
                 res.status(500).send({ error: 'Database accsess failed' });
             });
+        res.send({ test: true });
     });
 
     app.post('/source', async (req, res) => {
