@@ -26,7 +26,12 @@ module.exports = (app) => {
         // these loop is for checking hash collisions
         do {
             hash = tinyHash(req.body.sourceUrl + Math.random());
-            mapping = await UrlMapping.findOne({ hash });
+            console.log('hash', hash);
+            try {
+                mapping = await UrlMapping.findOne({ hash });
+            } catch (e) {
+                mapping = null;
+            }
         } while (!!mapping && mapping.sourceUrl !== sourceUrl);
         console.log('hash', hash);
         console.log(mapping);
