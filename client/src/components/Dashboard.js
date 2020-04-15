@@ -1,20 +1,41 @@
 import React, { Component } from 'react';
-import { getTinyUrl, getSourceUrl } from '../services/tinyUrl';
+import { getTinyUrl, getSourceUrl, getLast } from '../services/tinyUrl';
+import urlValidator from '../services/urlValidator';
+import protocolAppender from '../services/protocolAppender';
+import RedirectList from './RedirectList';
 
 class Dashboard extends Component {
-    state = { sourceUrl: '', tinyUrl: '', pendingRequest: false, error: '' };
+    state = {
+        sourceUrl: '',
+        tinyUrl: '',
+        pendingRequest: false,
+        error: '',
+        lastMappings: [],
+    };
 
-    handleSourceUrlChange(event) {
-        this.setState({ sourceUrl: event.target.value });
+    componentDidMount() {
+        getLast().then((result) => {
+            console.log(result.data);
+            this.setState({ lastMappings: result.data });
+        });
+    }
+
+    componentDidUpdate() {
+        getLast().then((result) => {
+            this.setState({ lastMappings: result.data });
+        });
+    }
+
+    handleInputChange(event) {
+        const target = event.target;
+        const value = target.value;
+        const name = target.name;
+        this.setState({ [name]: value });
     }
 
     handleSourceUrlSubmit(event) {
         event.preventDefault();
         this.makeUrlRequest('sourceUrl', 'tinyUrl');
-    }
-
-    handleTinyUrlChange(event) {
-        this.setState({ tinyUrl: event.target.value });
     }
 
     handleTinyUrlSubmit(event) {
@@ -23,10 +44,21 @@ class Dashboard extends Component {
     }
 
     async makeUrlRequest(inputField, outputField) {
+        if (!urlValidator(this.state[inputField])) {
+            this.setState({
+                [inputField + 'InputError']: 'Invalid ' + inputField + ' value',
+            });
+            return;
+        }
+
         this.setState({ pendingRequest: true });
         const accessor = inputField === 'sourceUrl' ? getTinyUrl : getSourceUrl;
         try {
-            const data = await accessor(this.state[inputField]);
+            const inputFieldValue = protocolAppender(this.state[inputField]);
+            this.setState({
+                [inputField]: inputFieldValue,
+            });
+            const data = await accessor(inputFieldValue);
             const payload = data.data;
             console.log(data);
             if (payload.error) {
@@ -56,12 +88,10 @@ class Dashboard extends Component {
                     <label>
                         Input your full url here:
                         <input
-                            name="source"
+                            name="sourceUrl"
                             type="text"
                             value={this.state.sourceUrl}
-                            onChange={(event) =>
-                                this.handleSourceUrlChange(event)
-                            }
+                            onChange={(event) => this.handleInputChange(event)}
                         />
                     </label>
                     <button
@@ -73,6 +103,7 @@ class Dashboard extends Component {
                     <a
                         className="waves-effect waves-light btn-small right"
                         disabled={this.state.pendingRequest}
+                        target="_blank"
                         rel="noopener noreferrer"
                         href={this.state.sourceUrl}>
                         Browse this source url
@@ -85,12 +116,10 @@ class Dashboard extends Component {
                     <label>
                         Your tiny url is:
                         <input
-                            name="source"
+                            name="tinyUrl"
                             type="text"
                             value={this.state.tinyUrl}
-                            onChange={(event) =>
-                                this.handleTinyUrlChange(event)
-                            }
+                            onChange={(event) => this.handleInputChange(event)}
                         />
                     </label>
                     <button
@@ -111,6 +140,7 @@ class Dashboard extends Component {
                 <div className="red-text" style={{ marginBottom: '20px' }}>
                     {this.state.tinyUrlInputError}
                 </div>
+                <RedirectList lastMappings={this.state.lastMappings} />
             </div>
         );
     }

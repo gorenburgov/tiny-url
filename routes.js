@@ -8,6 +8,7 @@ const requireValidSourceUrl = require('./middlewares/requireValidSourceUrl');
 module.exports = (app) => {
     app.get('/tiny/:hash', (req, res) => {
         const hash = req.params.hash;
+
         UrlMapping.findOne({ hash }).then((mapping) => {
             if (!mapping) {
                 res.status(404).send({
@@ -31,12 +32,15 @@ module.exports = (app) => {
                     hash = tinyHash(sourceUrl + Math.random());
                     mapping = await UrlMapping.findOne({ hash });
                 } while (!!mapping);
-                mapping = new UrlMapping({ hash, sourceUrl });
+                mapping = new UrlMapping({
+                    hash,
+                    sourceUrl,
+                    created: Date.now(),
+                });
                 await mapping.save();
             } else {
                 hash = mapping.hash;
             }
-            console.log('mapping', mapping);
             const host = 'http://' + req.get('host');
             res.send({ tinyUrl: `${host}/tiny/${hash}` });
         } catch (err) {
@@ -63,6 +67,23 @@ module.exports = (app) => {
                 !!mapping
                     ? { sourceUrl: mapping.sourceUrl }
                     : { error: 'This tinyUrl is not in use currrently.' }
+            );
+        } catch (e) {
+            res.status(500).send({ error: 'Internal server error' });
+        }
+    });
+
+    app.get('/last', async (req, res) => {
+        try {
+            const host = 'http://' + req.get('host');
+            const last10 = await UrlMapping.find({})
+                .sort({ created: -1 })
+                .limit(10);
+            res.send(
+                last10.map((mapping) => ({
+                    ...mapping._doc,
+                    tinyUrl: `${host}/tiny/${mapping.hash}`,
+                }))
             );
         } catch (e) {
             res.status(500).send({ error: 'Internal server error' });

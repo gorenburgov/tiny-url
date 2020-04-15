@@ -6,3 +6,7 @@ export const getSourceUrl = (tinyUrl) => {
 export const getTinyUrl = (sourceUrl) => {
     return axios.post('/tiny', { sourceUrl });
 };
+
+export const getLast = () => {
+    return axios.get('/last');
+};
