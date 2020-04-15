@@ -10,4 +10,5 @@ App and service for converting url to tiny url
 6. cd ..
 7. npm run dev
 
-
+#production version:
+https://hidden-cove-41878.herokuapp.com/
