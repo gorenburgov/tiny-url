@@ -3,7 +3,7 @@ const { Path } = require('path-parser');
 const { URL } = require('url');
 const UrlMapping = mongoose.model('urlMappings');
 const tinyHash = require('./utils/tinyHash');
-const requireValidSourceUrl = require('./middlewares/requreValideSurceUrl');
+const requireValidSourceUrl = require('./middlewares/requireValidSourceUrl');
 
 module.exports = (app) => {
     app.get('/tiny/:hash', (req, res) => {
@@ -19,48 +19,53 @@ module.exports = (app) => {
         });
     });
 
-    app.post('/tiny', requireValidSourceUrl, (req, res) => {
+    app.post('/tiny', requireValidSourceUrl, async (req, res) => {
         const sourceUrl = req.body.sourceUrl;
         let hash, mapping;
-        // these loop is for checking hash collisions
 
-        hash = tinyHash(req.body.sourceUrl + Math.random());
-        console.log(1111);
-        UrlMapping.findOne({ hash })
-            .then((mapping) => {
-                console.log('mapping', mapping);
-                if (!mapping) {
-                    console.log('2222');
-                    mapping = new UrlMapping({ hash, sourceUrl });
-                    mapping.save();
-                }
-                console.log(33333);
-                const host = req.protocol + '://' + req.get('host');
-                res.send({ tinyUrl: `${host}/tiny/${mapping.hash}` });
-            })
-            .catch((e) => {
-                console.log('err', e);
-                res.status(500).send({ error: 'Database accsess failed' });
-            });
-        res.send({ test: true });
+        try {
+            mapping = await UrlMapping.findOne({ sourceUrl });
+            if (!mapping) {
+                // loop for avoiding hash collisions
+                do {
+                    hash = tinyHash(sourceUrl + Math.random());
+                    mapping = await UrlMapping.findOne({ hash });
+                } while (!!mapping);
+                mapping = new UrlMapping({ hash, sourceUrl });
+                await mapping.save();
+            } else {
+                hash = mapping.hash;
+            }
+            console.log('mapping', mapping);
+            const host = 'http://' + req.get('host');
+            res.send({ tinyUrl: `${host}/tiny/${hash}` });
+        } catch (err) {
+            res.status(500).send({ error: 'Internal server error' });
+        }
     });
 
     app.post('/source', async (req, res) => {
         const tinyUrl = req.body.tinyUrl;
         const p = new Path('/tiny/:hash');
         const match = p.test(new URL(tinyUrl).pathname);
+
         if (!match) {
             res.status(400).send({
                 error: `The invalid URL!`,
             });
+            return;
         }
 
-        UrlMapping.findOne({ hash: match.hash }).then((mapping) =>
+        const hash = match.hash;
+        try {
+            const mapping = await UrlMapping.findOne({ hash });
             res.send(
-                mapping
+                !!mapping
                     ? { sourceUrl: mapping.sourceUrl }
-                    : { error: 'This tinyUrl is not used currently.' }
-            )
-        );
+                    : { error: 'This tinyUrl is not in use currrently.' }
+            );
+        } catch (e) {
+            res.status(500).send({ error: 'Internal server error' });
+        }
     });
 };
