@@ -3,7 +3,6 @@ const keys = require('./config/keys');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 require('./models/UrlMapping');
-//mongoose.set('useUnifiedTopology', true);
 mongoose.set('useNewUrlParser', true);
 
 mongoose.connect(keys.mongoURI);
